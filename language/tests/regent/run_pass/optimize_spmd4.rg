@@ -21,6 +21,7 @@ import "regent"
 --   * disjoint and aliased regions
 --   * multiple fields
 --   * multiple read-write tasks
+--   * loop-carried region dependencies
 
 local c = regentlib.c
 
@@ -106,27 +107,31 @@ task main()
 
   var pieces = 4
 
+  for i = 0, pieces do
+    inc_ba(p[i])
+  end
+
   __demand(__spmd)
   for t = 0, 10 do
-    for i = 0, pieces do
-      inc_ba(p[i])
-    end
-    -- Communication happens here.
     for i = 0, pieces do
       avg_ac(p[i], q[i])
     end
     for i = 0, pieces do
       rot_cb(p[i], 300, 137)
     end
+    for i = 0, pieces do
+      inc_ba(p[i])
+    end
+    -- Communication happens here.
   end
 
   for x in r do
     c.printf("x %d %d %d\n", x.a, x.b, x.c)
   end
 
-  regentlib.assert(x0.a ==  9550, "test failed")
-  regentlib.assert(x1.a == 10598, "test failed")
-  regentlib.assert(x2.a ==  9409, "test failed")
-  regentlib.assert(x3.a == 10660, "test failed")
+  regentlib.assert(x0.a ==  9428, "test failed")
+  regentlib.assert(x1.a == 10710, "test failed")
+  regentlib.assert(x2.a ==  9287, "test failed")
+  regentlib.assert(x3.a == 10675, "test failed")
 end
 regentlib.start(main)
